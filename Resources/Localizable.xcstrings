@@ -177,13 +177,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deletes orphaned data folders in both the private and shared locations together with their keychains, all of SideStore's Payload copies, and exported resigned IPAs. Installed apps, in-use containers, accounts, certificates and AppGroup data are never touched. Locally installed apps will ask you to pick their IPA again at the next refresh. If you run several LiveContainers side by side, shared orphan folders may belong to another copy - skip this then."
+            "value" : "Deletes orphaned data folders in both the private and shared locations together with their keychains, all of SideStore's Payload copies, and exported resigned IPAs. Installed apps, in-use containers, accounts, certificates and AppGroup data are never touched. LiveContainer's own copies, which SideStore needs to renew LiveContainer itself, are always kept. Locally installed apps will ask you to pick their IPA again at the next refresh. If you run several LiveContainers side by side, shared orphan folders may belong to another copy - skip this then."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将删除私有与共享两处无主数据文件夹及其钥匙串、SideStore 的全部 Payloads 副本和导出的重签 IPA。已装 App、在用容器、账号、证书和 AppGroup 数据绝不触碰。本地文件安装的 App 下次刷新时需重新选择 IPA。若你同时装有多个 LiveContainer，共享区的无主文件夹可能属于另一个，请勿使用。"
+            "value" : "将删除私有与共享两处无主数据文件夹及其钥匙串、SideStore 的全部 Payloads 副本和导出的重签 IPA。已装 App、在用容器、账号、证书和 AppGroup 数据绝不触碰。SideStore 为 LiveContainer 本体续签所用的副本会始终保留。本地文件安装的 App 下次刷新时需重新选择 IPA。若你同时装有多个 LiveContainer，共享区的无主文件夹可能属于另一个，请勿使用。"
           }
         }
       }
