@@ -178,7 +178,7 @@ final class LCStorageManagementModel: ObservableObject {
             containerDetails.append(
                 LCAppStorageContainerItem(
                     id: UUID(),
-                    name: container.name,
+                    name: container.effectiveName,
                     size: size,
                     isExternalContainer: container.storageBookMark != nil
                 )
