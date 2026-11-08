@@ -22,7 +22,12 @@ struct LCDataManagementView : View {
     
     @StateObject private var keyChainRemovalAlert = YesNoHelper()
     @StateObject private var tmpRemovalAlert = YesNoHelper()
-    @StateObject private var cacheRemovalAlert = YesNoHelper() 
+    @StateObject private var cacheRemovalAlert = YesNoHelper()
+    @StateObject private var writeNamesAlert = YesNoHelper()
+    @StateObject private var restoreNamesAlert = YesNoHelper()
+    @StateObject private var deepCleanAlert = YesNoHelper()
+    
+    @AppStorage("LCShowAppNameForContainers") private var showAppNameForContainers = true 
 
     
     @State var errorShow = false
@@ -94,6 +99,32 @@ struct LCDataManagementView : View {
                 } label: {
                     Text("lc.settings.clearIconCache".loc)
                 }
+            }
+            
+            Section {
+                Toggle("lc.dataManagement.showAppNameForContainers".loc, isOn: $showAppNameForContainers)
+                
+                Button {
+                    Task { await writeAppNamesToContainers() }
+                } label: {
+                    Text("lc.dataManagement.writeAppNames".loc)
+                }
+                
+                Button {
+                    Task { await restoreContainerNames() }
+                } label: {
+                    Text("lc.dataManagement.restoreAppNames".loc)
+                }
+                
+                Button(role:.destructive) {
+                    Task { await deepClean() }
+                } label: {
+                    Text("lc.dataManagement.deepClean".loc)
+                }
+            } header: {
+                Text("lc.dataManagement.containerNames".loc)
+            } footer: {
+                Text("lc.dataManagement.containerNamesDesc".loc)
             }
             
             Section {
@@ -189,6 +220,46 @@ struct LCDataManagementView : View {
     Text("lc.settings.cleanCacheConfirm".loc) 
 }
 
+        .alert("lc.dataManagement.writeAppNames".loc, isPresented: $writeNamesAlert.show) {
+            Button {
+                writeNamesAlert.close(result: true)
+            } label: {
+                Text("lc.dataManagement.writeAppNames".loc)
+            }
+            
+            Button("lc.common.cancel".loc, role: .cancel) {
+                writeNamesAlert.close(result: false)
+            }
+        } message: {
+            Text("lc.dataManagement.writeAppNamesDesc".loc)
+        }
+        .alert("lc.dataManagement.restoreAppNames".loc, isPresented: $restoreNamesAlert.show) {
+            Button {
+                restoreNamesAlert.close(result: true)
+            } label: {
+                Text("lc.dataManagement.restoreAppNames".loc)
+            }
+            
+            Button("lc.common.cancel".loc, role: .cancel) {
+                restoreNamesAlert.close(result: false)
+            }
+        } message: {
+            Text("lc.dataManagement.restoreAppNamesDesc".loc)
+        }
+        .alert("lc.dataManagement.deepClean".loc, isPresented: $deepCleanAlert.show) {
+            Button(role: .destructive) {
+                deepCleanAlert.close(result: true)
+            } label: {
+                Text("lc.common.delete".loc)
+            }
+            
+            Button("lc.common.cancel".loc, role: .cancel) {
+                deepCleanAlert.close(result: false)
+            }
+        } message: {
+            Text("lc.dataManagement.deepCleanDesc".loc)
+        }
+
         .onAppear {
             onAppearFunc()
         }
@@ -204,6 +275,86 @@ struct LCDataManagementView : View {
             }
             appeared = true
         }
+    }
+    
+    func writeAppNamesToContainers() async {
+        guard let result = await writeNamesAlert.open(), result else {
+            return
+        }
+        let count = LCContainer.bulkWriteAppNames(apps: sharedModel.apps + sharedModel.hiddenApps)
+        successInfo = "lc.dataManagement.writeAppNamesDone %lld".localizeWithFormat(count)
+        successShow = true
+    }
+    
+    func restoreContainerNames() async {
+        guard let result = await restoreNamesAlert.open(), result else {
+            return
+        }
+        let count = LCContainer.bulkRestoreAppNames(apps: sharedModel.apps + sharedModel.hiddenApps)
+        successInfo = "lc.dataManagement.restoreAppNamesDone %lld".localizeWithFormat(count)
+        successShow = true
+    }
+    
+    static func deepCleanFolderSize(at url: URL) -> Int64 {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(at: url, includingPropertiesForKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isRegularFileKey], options: [], errorHandler: nil) else {
+            return 0
+        }
+        var total: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            let values = try? fileURL.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isRegularFileKey])
+            if values?.isRegularFile == true {
+                total += Int64(values?.totalFileAllocatedSize ?? values?.fileAllocatedSize ?? 0)
+            }
+        }
+        return total
+    }
+    
+    // Deep clean: orphan data folders in both the private and the shared location
+    // (with their keychains), plus SideStore's payload copies and resigned-IPA exports.
+    // Registered containers, installed apps, accounts and AppGroup data are never touched.
+    func deepClean() async {
+        guard let result = await deepCleanAlert.open(), result else {
+            return
+        }
+        let fm = FileManager.default
+        var registered = Set<String>()
+        for app in sharedModel.apps + sharedModel.hiddenApps {
+            for container in app.appInfo.containers {
+                registered.insert(container.folderName)
+            }
+        }
+        var freed: Int64 = 0
+        for root in [LCPath.dataPath, LCPath.lcGroupDataPath] {
+            let entries = (try? fm.contentsOfDirectory(atPath: root.path)) ?? []
+            for entry in entries where !registered.contains(entry) {
+                let url = root.appendingPathComponent(entry)
+                var isDirectory: ObjCBool = false
+                guard fm.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+                    continue
+                }
+                freed += Self.deepCleanFolderSize(at: url)
+                try? fm.removeItem(at: url)
+                LCUtils.removeAppKeychain(dataUUID: entry)
+                sharedModel.appDataFolderNames.removeAll { $0 == entry }
+            }
+        }
+        var sideStoreCacheDirs = [
+            LCPath.docPath.appendingPathComponent("ResignedApps"),
+            LCPath.lcGroupDocPath.deletingLastPathComponent().appendingPathComponent("Apps/Payloads")
+        ]
+        if let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            sideStoreCacheDirs.append(appSupport.appendingPathComponent("Apps/Payloads"))
+        }
+        for dir in sideStoreCacheDirs {
+            let items = (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
+            for item in items {
+                freed += Self.deepCleanFolderSize(at: item)
+                try? fm.removeItem(at: item)
+            }
+        }
+        successInfo = "lc.dataManagement.deepCleanDone %@".localizeWithFormat(ByteCountFormatter.string(fromByteCount: freed, countStyle: .file))
+        successShow = true
     }
     
     func cleanUpUnusedFolders() async {
