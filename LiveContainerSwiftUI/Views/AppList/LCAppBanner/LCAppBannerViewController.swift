@@ -140,7 +140,7 @@ final class LCAppBannerViewController: UIViewController, UIContextMenuInteractio
         if model.uiContainers.count > 1 {
             let containerActions = model.uiContainers.map { [weak self] container in
                 UIAction(
-                    title: container.name,
+                    title: container.effectiveName,
                     state: container == model.uiSelectedContainer ? .on : .off
                 ) { _ in
                     model.uiSelectedContainer = container
