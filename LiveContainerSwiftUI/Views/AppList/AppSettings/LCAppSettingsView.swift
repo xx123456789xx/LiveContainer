@@ -114,7 +114,7 @@ struct LCAppSettingsView: View {
                         NavigationLink {
                             LCContainerView(container: model.uiContainers[i], uiDefaultDataFolder: $model.uiDefaultDataFolder, delegate: self)
                         } label: {
-                            Text(model.uiContainers[i].name)
+                            Text(model.uiContainers[i].effectiveName)
                         }
                     }
                 }
