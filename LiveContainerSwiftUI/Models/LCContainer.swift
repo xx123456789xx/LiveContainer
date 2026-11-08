@@ -12,6 +12,10 @@ class LCContainer : ObservableObject, Hashable {
     @Published var name : String
     @Published var isShared : Bool
     
+    var ownerAppDisplayName : String?
+    var ownerContainerIndex : Int = 0
+    var ownerContainerCount : Int = 1
+    
     @Published var storageBookMark: Data?
     @Published var resolvedContainerURL: URL?
     @Published var bookmarkResolved = false
@@ -120,6 +124,101 @@ class LCContainer : ObservableObject, Hashable {
         }
     }
     
+    // The name shown in lists. A container that was never renamed (its name is still
+    // its folder UUID) is presented with its app's name while that option is on.
+    // The stored name itself is never changed by this.
+    var effectiveName : String {
+        guard LCContainer.appNameDisplayEnabled, let autoAppName else {
+            return name
+        }
+        return autoAppName
+    }
+    
+    // The app-derived name for a never-renamed container, nil when it has a real name.
+    var autoAppName : String? {
+        guard name == folderName, let ownerAppDisplayName, !ownerAppDisplayName.isEmpty else {
+            return nil
+        }
+        if ownerContainerCount > 1, ownerContainerIndex > 0 {
+            return "\(ownerAppDisplayName) \(ownerContainerIndex + 1)"
+        }
+        return ownerAppDisplayName
+    }
+    
+    static var appNameDisplayEnabled : Bool {
+        return UserDefaults.standard.object(forKey: "LCShowAppNameForContainers") as? Bool ?? true
+    }
+    
+    private static let bulkNamedFoldersKey = "LCBulkNamedContainerFolders"
+    
+    static var bulkNamedFolderNames : [String] {
+        get {
+            return UserDefaults.standard.stringArray(forKey: bulkNamedFoldersKey) ?? []
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: bulkNamedFoldersKey)
+        }
+    }
+    
+    private func persistName(appIdentifier : String) {
+        let plistURL = containerURL.appendingPathComponent("LCContainerInfo.plist")
+        if FileManager.default.fileExists(atPath: plistURL.path) {
+            makeLCContainerInfoPlist(appIdentifier: appIdentifier, keychainGroupId: keychainGroupId)
+        }
+    }
+    
+    // Give every never-renamed container its app's name, saved exactly like a manual
+    // rename. Written containers are recorded so bulkRestoreAppNames can undo them.
+    static func bulkWriteAppNames(apps: [LCAppModel]) -> Int {
+        var recorded = bulkNamedFolderNames
+        var count = 0
+        for app in apps {
+            var changed = false
+            for container in app.uiContainers {
+                guard let autoName = container.autoAppName else {
+                    continue
+                }
+                container.name = autoName
+                container.persistName(appIdentifier: app.appInfo.bundleIdentifier()!)
+                if !recorded.contains(container.folderName) {
+                    recorded.append(container.folderName)
+                }
+                changed = true
+                count += 1
+            }
+            if changed {
+                app.appInfo.containers = app.uiContainers
+                app.objectWillChange.send()
+            }
+        }
+        bulkNamedFolderNames = recorded
+        return count
+    }
+    
+    // Undo bulkWriteAppNames: recorded containers get their folder UUID back as name.
+    static func bulkRestoreAppNames(apps: [LCAppModel]) -> Int {
+        let recorded = bulkNamedFolderNames
+        guard !recorded.isEmpty else {
+            return 0
+        }
+        var count = 0
+        for app in apps {
+            var changed = false
+            for container in app.uiContainers where recorded.contains(container.folderName) {
+                container.name = container.folderName
+                container.persistName(appIdentifier: app.appInfo.bundleIdentifier()!)
+                changed = true
+                count += 1
+            }
+            if changed {
+                app.appInfo.containers = app.uiContainers
+                app.objectWillChange.send()
+            }
+        }
+        bulkNamedFolderNames = []
+        return count
+    }
+    
     func toDict() -> [String : Any] {
         var ans : [String: Any] = [
             "folderName" : folderName,
@@ -199,8 +298,11 @@ extension LCAppInfo {
                 upgrade = true
             }
             let dictArr = containerInfo as? [[String : Any]] ?? []
-            return dictArr.map{ dict in
+            return dictArr.enumerated().map{ (index, dict) in
                 let ans = LCContainer(infoDict: dict, isShared: isShared)
+                ans.ownerAppDisplayName = displayName()
+                ans.ownerContainerIndex = index
+                ans.ownerContainerCount = dictArr.count
                 if upgrade {
                     ans.makeLCContainerInfoPlist(appIdentifier: bundleIdentifier()!, keychainGroupId: 0)
                 }
