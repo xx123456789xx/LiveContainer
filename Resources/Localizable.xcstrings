@@ -1,6 +1,210 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "lc.dataManagement.containerNames" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Container Names"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "容器名称"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.showAppNameForContainers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show App Names for Containers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "容器以 App 名显示"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.containerNamesDesc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Containers that were never renamed can be shown with their app's name. Writing saves the app name into each such container, exactly like a manual rename; Restore only undoes names written here."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从未改过名的容器可以显示为所属 App 的名字。写入会把 App 名按手动改名相同的方式存进容器；还原只撤销在这里写入的名字。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.writeAppNames" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write App Names to Containers"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把 App 名写入容器"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.writeAppNamesDesc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every container that still uses its folder UUID as its name will be given its app's name, saved like a manual rename. Installed apps and their data are not changed."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有还以 UUID 为名字的容器都会存入所属 App 的名字，方式与手动改名相同。已装 App 和数据不会被改动。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.writeAppNamesDone %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App name written to %lld container(s)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已给 %lld 个容器写入 App 名。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.restoreAppNames" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore Container Names"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还原容器名"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.restoreAppNamesDesc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Containers named by Write App Names will be set back to their folder UUIDs, so everything is stock again before you update LiveContainer. If you renamed one of them by hand afterwards, it will still be restored."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "被「把 App 名写入容器」起过名的容器会改回文件夹 UUID，升级 LiveContainer 前可先还原成原样。若某个容器写入后又被你手动改过名，也会一并还原。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.restoreAppNamesDone %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restored %lld container name(s)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已还原 %lld 个容器名。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.deepClean" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deep Clean"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深度清理"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.deepCleanDesc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes orphaned data folders in both the private and shared locations together with their keychains, all of SideStore's Payload copies, and exported resigned IPAs. Installed apps, in-use containers, accounts, certificates and AppGroup data are never touched. Locally installed apps will ask you to pick their IPA again at the next refresh. If you run several LiveContainers side by side, shared orphan folders may belong to another copy - skip this then."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将删除私有与共享两处无主数据文件夹及其钥匙串、SideStore 的全部 Payloads 副本和导出的重签 IPA。已装 App、在用容器、账号、证书和 AppGroup 数据绝不触碰。本地文件安装的 App 下次刷新时需重新选择 IPA。若你同时装有多个 LiveContainer，共享区的无主文件夹可能属于另一个，请勿使用。"
+          }
+        }
+      }
+    },
+    "lc.dataManagement.deepCleanDone %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deep clean finished. Freed %@."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深度清理完成，共释放 %@。"
+          }
+        }
+      }
+    },
     "lc.appBanner.addToHomeScreen" : {
       "extractionState" : "manual",
       "localizations" : {
