@@ -173,7 +173,7 @@ struct LCContainerView : View {
                 }
             }
         }
-        .navigationTitle(container.name)
+        .navigationTitle(container.effectiveName)
         .navigationBarTitleDisplayMode(.inline)
         .alert("lc.common.error".loc, isPresented: $errorShow){
         } message: {
