@@ -310,6 +310,21 @@ struct LCDataManagementView : View {
         return total
     }
     
+    static func deepCleanIsHostAppPayload(_ url: URL) -> Bool {
+        let infoPlistURL = url.appendingPathComponent("App.app/Info.plist")
+        guard let info = NSDictionary(contentsOf: infoPlistURL) else {
+            return false
+        }
+        return info["CFBundleIdentifier"] as? String == Bundle.main.bundleIdentifier
+    }
+
+    static func deepCleanIsHostResignedIPA(_ url: URL) -> Bool {
+        let baseName = url.deletingPathExtension().lastPathComponent
+        let bundleName = Bundle.main.infoDictionary?["CFBundleName"] as? String
+        let displayName = Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String
+        return baseName == bundleName || baseName == displayName
+    }
+
     // Deep clean: orphan data folders in both the private and the shared location
     // (with their keychains), plus SideStore's payload copies and resigned-IPA exports.
     // Registered containers, installed apps, accounts and AppGroup data are never touched.
@@ -339,16 +354,31 @@ struct LCDataManagementView : View {
                 sharedModel.appDataFolderNames.removeAll { $0 == entry }
             }
         }
-        var sideStoreCacheDirs = [
-            LCPath.docPath.appendingPathComponent("ResignedApps"),
+        // SideStore's resigned-IPA exports. LiveContainer's own export is kept: it can
+        // serve as a source when SideStore renews LiveContainer itself.
+        let resignedDir = LCPath.docPath.appendingPathComponent("ResignedApps")
+        let resignedItems = (try? fm.contentsOfDirectory(at: resignedDir, includingPropertiesForKeys: nil)) ?? []
+        for item in resignedItems {
+            if Self.deepCleanIsHostResignedIPA(item) {
+                continue
+            }
+            freed += Self.deepCleanFolderSize(at: item)
+            try? fm.removeItem(at: item)
+        }
+        // SideStore's payload copies. LiveContainer's own copy is always kept for the
+        // same reason: SideStore re-signs LiveContainer from it at renewal time.
+        var payloadDirs = [
             LCPath.lcGroupDocPath.deletingLastPathComponent().appendingPathComponent("Apps/Payloads")
         ]
         if let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            sideStoreCacheDirs.append(appSupport.appendingPathComponent("Apps/Payloads"))
+            payloadDirs.append(appSupport.appendingPathComponent("Apps/Payloads"))
         }
-        for dir in sideStoreCacheDirs {
+        for dir in payloadDirs {
             let items = (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
             for item in items {
+                if Self.deepCleanIsHostAppPayload(item) {
+                    continue
+                }
                 freed += Self.deepCleanFolderSize(at: item)
                 try? fm.removeItem(at: item)
             }
